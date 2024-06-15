@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AniList Random Anime from User</title>
+</head>
+<body>
+<h1>AniList Random Anime from User</h1>
+<label for="username">Enter User's AniList Username:</label>
+<input type="text" id="username" placeholder="Enter the AniList username">
+
+<label>Choose MediaList Status:</label><br>
+<input type="checkbox" id="statusCURRENT" value="CURRENT">
+<label for="statusCURRENT">Currently Watching</label><br>
+<input type="checkbox" id="statusPLANNING" value="PLANNING">
+<label for="statusPLANNING">Plan to Watch</label><br>
+<input type="checkbox" id="statusCOMPLETED" value="COMPLETED">
+<label for="statusCOMPLETED">Completed</label><br>
+<input type="checkbox" id="statusDROPPED" value="DROPPED">
+<label for="statusDROPPED">Dropped</label><br>
+
+<button onclick="fetchAndRandomizeAnime()">Fetch and Randomize</button>
+<div id="randomAnime"></div>
+
+<script>
+function fetchAndRandomizeAnime() {
+    var username = document.getElementById('username').value.trim();
+    if (!username) {
+        alert('Please enter the AniList username');
+        return;
+    }
+
+    var statuses = [];
+    var checkboxes = document.querySelectorAll('input[type=checkbox]:checked');
+    checkboxes.forEach(function(checkbox) {
+        statuses.push(checkbox.value);
+    });
+
+    var query = `
+        query ($username: String, $statuses: [MediaListStatus]) {
+            MediaListCollection (userName: $username, type: ANIME, status_in: $statuses) {
+                lists {
+                    entries {
+                        media {
+                            id
+                            title {
+                                romaji
+                                english
+                                native
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    `;
+
+    var variables = {
+        username: username,
+        statuses: statuses
+    };
+
+    var url = 'https://graphql.anilist.co',
+        options = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                query: query,
+                variables: variables
+            })
+        };
+
+    fetch(url, options)
+        .then(handleResponse)
+        .then(handleRandomizedAnime)
+        .catch(handleError);
+}
+
+function handleResponse(response) {
+    return response.json().then(function (json) {
+        return response.ok ? json : Promise.reject(json);
+    });
+}
+
+function handleRandomizedAnime(data) {
+    var randomAnimeDiv = document.getElementById('randomAnime');
+    randomAnimeDiv.innerHTML = '';
+    if (data.data.MediaListCollection) {
+        var lists = data.data.MediaListCollection.lists;
+        var animeList = [];
+        lists.forEach(function(list) {
+            var entries = list.entries;
+            entries.forEach(function(entry) {
+                animeList.push(entry.media.title.romaji || entry.media.title.english || entry.media.title.native);
+            });
+        });
+
+        if (animeList.length > 0) {
+            var randomIndex = Math.floor(Math.random() * animeList.length);
+            var randomAnime = animeList[randomIndex];
+            randomAnimeDiv.innerHTML = `<h2>Random Anime from ${username}</h2>`;
+            randomAnimeDiv.innerHTML += `<p>Title: ${randomAnime}</p>`;
+        } else {
+            randomAnimeDiv.innerHTML = '<p>No anime found in the user\'s collection with selected statuses</p>';
+        }
+    } else {
+        randomAnimeDiv.innerHTML = '<p>User not found or no anime collection found</p>';
+    }
+}
+
+function handleError(error) {
+    alert('Error, check console');
+    console.error(error);
+}
+</script>
+<iframe width="560" height="315" src="//www.youtube.com/embed/videoid?modestbranding=1&autohide=1&showinfo=0&controls=0" frameborder="0" allowfullscreen></iframe>
+<iframe width="882" height="496" src="https://www.youtube.com/embed/XwsACnhFqnk?rel=0&amp;fs=0&amp;showinfo=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+</body>
+</html>

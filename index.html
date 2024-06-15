@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AniList Random Anime</title>
+</head>
+<body>
+<h1>AniList Random Anime</h1>
+<button onclick="fetchRandomAnime()">Get Random Anime</button>
+<script>
+function fetchRandomAnime() {
+    fetch('/random_anime')
+        .then(response => response.json())
+        .then(data => {
+            alert(`Random Anime: ${data.anime}`);
+            fetch(`/play_opening?anime=${encodeURIComponent(data.anime)}`);
+        })
+        .catch(error => console.error('Error:', error));
+}
+</script>
+</body>
+</html>
